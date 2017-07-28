@@ -1,14 +1,15 @@
 server <- shinyServer(function(input, output, session){
 
 # analysis
-variables <- gather(zip.data, variables, values, c(4, 6:9))
+variables <- zip.data %>% gather(var, value, c(4:5, 7:10, 13)) %>% 
+  select(-jobs.per.household, -jobs.within.45.drive)
 
 output$plot.matrix <- renderPlot({
-  ggplot(variables, aes(x = values, y = sqrt(housing.cost), color = housing.cost), 
+  ggplot(variables, aes(x = value, y = sqrt(housing.cost), color = housing.cost), 
          main = "monthly housing cost vs. top regression variables") +
     geom_point() +
     geom_smooth(method = "lm", se = FALSE, color = "navy", size = 0.3) +
-    facet_grid(.~variables, scales = "free") +
+    facet_grid(. ~ var, scales = "free") +
     scale_color_viridis() +
     theme_few() +
     theme(axis.title.x = element_blank())
@@ -16,7 +17,7 @@ output$plot.matrix <- renderPlot({
 
 output$hover.info <- renderUI({
   hover.1 <- input$plot.hover
-  point.1 <- nearPoints(variables, hover.1, threshold = 5, maxpoints = 1, addDist = FALSE)
+  point.1 <- nearPoints(variables, hover.1, threshold = 2, maxpoints = 1, addDist = FALSE)
   if (nrow(point.1) == 0) return(NULL)
   
   left.pct <- (hover.1$x - hover.1$domain$left) / (hover.1$domain$right - hover.1$domain$left)
@@ -27,15 +28,14 @@ output$hover.info <- renderUI({
   
   style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.75); ",
                   "left:", left.px - 2, "px; top:", top.px - 2, "px;")
-  
   wellPanel(
     style = style,
     p(HTML(paste0("<b> block group: </b>", point.1$GEOID, "<br/>",
                   "<b> city: </b>", point.1$city, "<br/>",
                   "<b> zip: </b>", point.1$zip, "<br/>",
                   "<b> monthly housing cost: </b>$", point.1$housing.cost, "<br/>",
-                  "<b> factor: </b>", point.1$variables, "</br>",
-                  "<b> value: </b>", point.1$values, "</br>")))
+                  "<b> factor: </b>", point.1$var, "</br>",
+                  "<b> value: </b>", point.1$value, "</br>")))
   )
 })
   
@@ -90,4 +90,3 @@ observeEvent(input$export, {
 })
 
 })
-
