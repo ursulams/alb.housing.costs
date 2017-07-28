@@ -18,21 +18,23 @@ ui <- shinyUI(
         br(),  
         h4("From an initial pool of over 90 socioeconomic and geographic variables contained
             in the Center for Neighborhood Technology's H+T Index and the EPA's Smart Location Database,
-            five emerged as the most correlated:"),
+            seven emerged as the most correlated:"),
         br(),
         tags$ul(
+          tags$li("The population of the block group"),
           tags$li("The size of the neighborhood (in acres)"),
           tags$li("Annual greenhouse gas emissions from household automobile use (metric tons)"),
           tags$li("The percentage of dwellings that are owner occupied"),
+          tags$li("The number of low-wage ($1250 or less per month) workers living there"),
           tags$li("The number of high-wage ($3333 or higher per month) workers living there"),
-          tags$li("The number of jobs available within a 45-minute drive")
+          tags$li("The number of jobs available within a 45-minute drive (weighted by block group jobs per household)")
           ),        
         br(),
-        HTML("<h4>The regression model has an adjusted R <sup>2</sup> of .6609, which 
-             indicates these five factors explain about 66 percent of the variability in monthly 
+        HTML("<h4>The regression model has an adjusted R <sup>2</sup> of .6929, which 
+             indicates these five factors explain about 69 percent of the variability in monthly 
              housing costs for the Capital Region.</h4>"),
         br(),
-        h4("Below are scatterplots demonstrating the relationship between each of the five factors
+        h4("Below are scatterplots demonstrating the relationship between each of the seven factors
            and monthly housing costs. Each dot represents a block group, the smallest 
            geographical unit contained within U.S. Census Bureau data, and the line of best
            fit is a linear "),
@@ -81,4 +83,3 @@ ui <- shinyUI(
  )
 )
   
-
