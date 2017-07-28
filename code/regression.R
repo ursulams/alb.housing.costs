@@ -2,6 +2,7 @@
 
 library(car)
 library(leaps)
+library(corrgram)
 library(dplyr)
 library(MASS)
 
@@ -18,6 +19,7 @@ leaps <- regsubsets(housing.cost~
                       gross.household.density +
                       autos.typical.income.household +
                       household.co2 +
+                      jobs.per.household +
                       overall.employment.index +
                       housing.units.per.acre +
                       employment.mix.index +
@@ -25,16 +27,16 @@ leaps <- regsubsets(housing.cost~
                       walkable.index +
                       pct.single.fam +
                       pct.owner.occupied +
-                      num.workers.home +
+                      low.wage.workers.home +
                       hi.wage.workers.home +
+                      low.wage.workers.work +
                       hi.wage.workers.work +
+                      pct.working.age +
                       total.employ +
                       office.jobs +
                       service.jobs +
                       job.type.mix +
-                      pct.working.age +
-                      jobs.within.45.drive,
-                    data = all.data, method = "exhaustive", nbest = 10)
+                      jobs.within.45.drive, data = all.data, method = "exhaustive", nbest = 20)
 
 # view results
 summary(leaps)
@@ -47,22 +49,27 @@ plot(leaps, scale="adjr2")
 
 # regress housing cost against most promising variables
 fit <- lm(housing.cost~
-            population +
             acreage +
             household.co2 +
+            walkable.index +
             pct.owner.occupied +
-            num.workers.home +
+            low.wage.workers.home +
             hi.wage.workers.home +
             jobs.within.45.drive)
 
 summary(fit)
 
 # test for  multicollinearity
-cor(all.data[c("population", "acreage", "household.co2", "pct.owner.occupied", 
-                "num.workers.home", "hi.wage.workers.home", "jobs.within.45.drive")], use = "complete")
+# first: Pearson's correlation coefficient
+cor(all.data[c("housing.cost", "acreage", "household.co2", "walkable.index", "pct.owner.occupied", 
+                "low.wage.workers.home", "hi.wage.workers.home", "jobs.within.45.drive")], use = "complete")
 
-# variance inflation factors
-# num.workers variable is problematic (>10)
+corrgram(all.data[, c("housing.cost", "acreage", "household.co2", "walkable.index", "pct.owner.occupied", 
+                    "low.wage.workers.home", "hi.wage.workers.home", "jobs.within.45.drive")],
+         lower.panel=panel.shade, upper.panel=panel.conf)
+
+# second: variance inflation factors
+# no problematic variable (>10), wakable index borderline (9.1)
 vif(fit)
 
 # model's diagnostic plots
@@ -76,20 +83,26 @@ scatterplotMatrix(~ housing.cost +
                     population +
                     acreage +
                     household.co2 +
+                    walkable.index +
                     pct.owner.occupied +
-                    num.workers.home +
+                    low.wage.workers.home +
                     hi.wage.workers.home +
                     jobs.within.45.drive,
                   data = all.data, main = "regression variables")
 
-# second model: remove highly correlated population & num.workers variables
 # transform housing cost variable to address fat tail residual distribution
+# jobs variable does not retain negative sign: omitted variable bias or ceteris paribus confusion?
+## weight jobs within 45 drive with factor of jobs per household in block group
+
 fit2 <- lm(sqrt(housing.cost) ~
+             population +
              acreage +
              household.co2 +
+             walkable.index +
              pct.owner.occupied +
+             low.wage.workers.home +
              hi.wage.workers.home +
-             jobs.within.45.drive)
+             (jobs.within.45.drive*sqrt(jobs.per.household)))
 
 summary(fit2)
 
@@ -100,27 +113,61 @@ plot(fit2)
 crPlots(fit2)
 qqPlot(fit2, envelope = .99)
 
-# try robust linear regression using huber weighting function to address heavy tail
-fit3 <- rlm(housing.cost ~
-              acreage +
-              household.co2 +
-              pct.owner.occupied +
-              hi.wage.workers.home +
-              jobs.within.45.drive, k = 5)
+# try generalized linear model with sqrt link function
+fit3 <- glm(housing.cost ~
+               acreage +
+               household.co2 +
+               pct.owner.occupied +
+               low.wage.workers.home +
+               hi.wage.workers.home +
+               (jobs.within.45.drive*sqrt(jobs.per.household)), family = poisson(link = "sqrt"))
 
 summary(fit3)
 
+# diagnostic plots 
+## outlying residuals have too high leverage
+par(mfrow = c(2, 2))
+plot(fit3)
+crPlots(fit3)
+qqPlot(fit3, envelope = .99)
+
+# try robust linear regression using huber weighting function to address heavy tail
+fit4 <- rlm(housing.cost ~
+              acreage +
+              household.co2 +
+              pct.owner.occupied +
+              low.wage.workers.home +
+              hi.wage.workers.home +
+              (jobs.within.45.drive*jobs.per.household), k = 5)
+
+summary(fit4)
+
 # plot model's residuals
 par(mfrow = c(2, 2))
-boxplot(fit3$wresid); plot(fit3$fitted.values, fit3$wresid)
+boxplot(fit4$wresid); plot(fit4$fitted.values, fit4$wresid)
 
 ## weighted model has increased reisdual variance and does not correct tails
 ## robust regression not more reasonable estimator
 ## model fit2 errors have mean 0, uncorrelated, with equal variances
 ## fit2 gives best linear unbiased estimator
+## remove insignificant walkable.index variable
+fit.final <- lm(sqrt(housing.cost) ~
+             population +
+             acreage +
+             household.co2 +
+             pct.owner.occupied +
+             low.wage.workers.home +
+             hi.wage.workers.home +
+             (jobs.within.45.drive*(sqrt(jobs.per.household))), data = all.data)
 
-# export relevant dataset (fit2 variables) for Shiny app table
-all.data <- all.data[ , c(1, 4, 7, 9, 25, 36, 52)]
+summary(fit.final)
+par(mfrow = c(2, 2))
+plot(fit.final)
+qqPlot(fit.final, envelope = .99)
+
+# export relevant dataset (fit.final variables) for Shiny app table
+all.data <- all.data[ , c(1, 2, 4, 7, 9, 25, 34, 36, 50, 52)]
+all.data <- all.data %>% mutate(weighted.jobs.within.45.drive = jobs.within.45.drive*sqrt(jobs.per.household))
 
 # add zip codes and export
 zip.data <- inner_join(xwalk, all.data, by = "GEOID") %>%
@@ -128,4 +175,4 @@ zip.data <- inner_join(xwalk, all.data, by = "GEOID") %>%
 
 write.csv(zip.data, "zip.data.csv", row.names = FALSE)
 
-# go to create.sp.R
+# go to create.sp.R to create spatial polygon data frames for Shiny app
