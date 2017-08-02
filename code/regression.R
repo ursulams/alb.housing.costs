@@ -94,8 +94,7 @@ scatterplotMatrix(~ housing.cost +
 # acreage, med wage, and jobs variables flipped signs
 ## replace acreage with housing units per acre factor
 ## remove population and med.wage variables because of high coefficients
-## weight jobs within 45 drive with factor of jobs per household in block group
-
+## model interaction of jobs within 45 drive variable with jobs per household in block group 
 
 fit2 <- lm(sqrt(housing.cost) ~
              housing.units.per.acre +
@@ -104,7 +103,7 @@ fit2 <- lm(sqrt(housing.cost) ~
              hi.wage.workers.home +
              (jobs.within.45.drive*sqrt(jobs.per.household)))
 
-summary(fit2)
+summary(fit2) # association between housing.cost & jobs within 45-minute drive depends on block groups jobs variable  
 
 # diagnostic plots indicate homoscedastic residuals
 # QQ plot still shows heavy right tail
