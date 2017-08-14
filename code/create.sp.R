@@ -1,10 +1,6 @@
 library(tidyverse)
 library(sp)
 library(rgdal)
-library(tidyverse)
-library(sp)
-library(rgdal)
-
 
 ### create spatial polygon data frames for leaflet polygons
 # read in polygon data
