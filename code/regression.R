@@ -41,9 +41,9 @@ summary(leaps)
 
 # plot a table of models showing variables in each model.
 # models are ordered by the selection statistic.
-par(mfrow=c(1,2))
-plot(leaps, scale="r2")
-plot(leaps, scale="adjr2")
+par(mfrow = c(1,2))
+plot(leaps, scale = "r2")
+plot(leaps, scale = "adjr2")
 
 # regress housing cost against most promising variables
 fit <- lm(housing.cost~
@@ -92,9 +92,9 @@ scatterplotMatrix(~ housing.cost +
 
 # transform housing cost variable to address fat tail residual distribution
 # acreage, med wage, and jobs variables flipped signs
-## replace acreage with housing units per acre factor
-## remove population and med.wage variables because of high coefficients
-## model interaction of jobs within 45 drive variable with jobs per household in block group 
+# replace acreage with housing units per acre factor
+# remove population and med.wage variables because of high coefficients
+# model interaction of jobs within 45 drive variable with jobs per household in block group 
 
 fit2 <- lm(sqrt(housing.cost) ~
              housing.units.per.acre +
@@ -140,11 +140,11 @@ summary(fit4)
 par(mfrow = c(2, 2))
 boxplot(fit4$wresid); plot(fit4$fitted.values, fit4$wresid)
 
-## weighted model has increased reisdual variance and does not correct tails
-## robust regression not more reasonable estimator
-## model fit2 errors have mean 0, uncorrelated, with equal variances
-## fit2 gives best linear unbiased estimator
-## remove insignificant walkable.index variable
+# weighted model has increased reisdual variance and does not correct tails
+# robust regression not a more reasonable estimator
+# model fit2 errors have mean 0, uncorrelated, with equal variances
+# fit2 gives best linear unbiased estimator
+# remove insignificant walkable.index variable
 fit.final <- lm(sqrt(housing.cost) ~
              housing.units.per.acre +
              household.co2 +
@@ -155,9 +155,9 @@ fit.final <- lm(sqrt(housing.cost) ~
 summary(fit.final)
 
 # check for multicollinearity in variables combined for jobs
-corrgram(all.data[, c("housing.cost", "housing.units.per.acre", "household.co2", "pct.owner.occupied",
+corrgram(all.data[ , c("housing.cost", "housing.units.per.acre", "household.co2", "pct.owner.occupied",
                       "hi.wage.workers.home", "jobs.within.45.drive", "jobs.per.household")],
-         lower.panel=panel.shade, upper.panel=panel.conf)
+         lower.panel = panel.shade, upper.panel = panel.conf)
 
 vif(fit.final)
 
