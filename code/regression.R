@@ -34,7 +34,7 @@ leaps <- regsubsets(housing.cost~
                       office.jobs +
                       service.jobs +
                       job.type.mix +
-                      jobs.within.45.drive, data = all.data, method = "exhaustive", nbest = 20)
+                      jobs.within.45.drive, data = all.data, method = "exhaustive", nbest = 10)
 
 # view results
 summary(leaps)
@@ -42,7 +42,7 @@ summary(leaps)
 # plot a table of models showing variables in each model.
 # models are ordered by the selection statistic.
 par(mfrow = c(1,2))
-plot(leaps, scale = "r2")
+plot(leaps, scale = "bic")
 plot(leaps, scale = "adjr2")
 
 # regress housing cost against most promising variables
@@ -61,19 +61,17 @@ summary(fit)
 # test for  multicollinearity
 # first: Pearson's correlation coefficient
 # med wage variable has high coefficients to two other variables
-cor(all.data[c("housing.cost", "population", "acreage", "household.co2", "walkable.index", "pct.owner.occupied",
-          "med.wage.workers.home", "hi.wage.workers.home", "jobs.within.45.drive")], use = "complete")
+corr <- cor(all.data[c("housing.cost", "population", "acreage", "household.co2", "walkable.index", "pct.owner.occupied",
+                       "med.wage.workers.home", "hi.wage.workers.home", "jobs.within.45.drive")], use = "complete")
 
-corrgram(all.data[, c("housing.cost", "population", "acreage", "household.co2", "walkable.index", "pct.owner.occupied",
-                    "med.wage.workers.home", "hi.wage.workers.home", "jobs.within.45.drive")],
-         lower.panel=panel.shade, upper.panel=panel.conf)
+corrgram(corr, lower.panel = panel.shade, upper.panel = panel.conf)
 
 # second: variance inflation factors
-# no problematic variable (>10), wakable index borderline (9.5)
+# pct.owner.occupied and walkable.index problematic
 vif(fit)
 
 # model's diagnostic plots
-# QQ plot indicates nonnormal distribution of residuals (right skew)
+# qq plot indicates nonnormal distribution of residuals (right skew)
 par(mfrow = c(2, 2))
 plot(fit)
 crPlots(fit)
@@ -91,9 +89,9 @@ scatterplotMatrix(~ housing.cost +
                   data = all.data, main = "regression variables")
 
 # transform housing cost variable to address fat tail residual distribution
-# acreage, med wage, and jobs variables flipped signs
+# acreage, med wage, and jobs variables flipped signs (multicollinearity?)
 # replace acreage with housing units per acre factor
-# remove population and med.wage variables because of high coefficients
+# remove population and med.wage variables because of high correlation coefficients
 # model interaction of jobs within 45 drive variable with jobs per household in block group 
 
 fit2 <- lm(sqrt(housing.cost) ~
@@ -101,12 +99,12 @@ fit2 <- lm(sqrt(housing.cost) ~
              household.co2 +
              pct.owner.occupied +
              hi.wage.workers.home +
-             (jobs.within.45.drive*sqrt(jobs.per.household)))
+             (jobs.within.45.drive*sqrt(jobs.per.household))) # zero values: can't log transform
 
-summary(fit2) # association between housing.cost & jobs within 45-minute drive depends on block groups jobs variable  
+summary(fit2)
 
 # diagnostic plots indicate homoscedastic residuals
-# QQ plot still shows heavy right tail
+# qq plot still shows heavy right tail
 par(mfrow = c(2, 2))
 plot(fit2)
 qqPlot(fit2, envelope = .99)
@@ -142,9 +140,6 @@ boxplot(fit4$wresid); plot(fit4$fitted.values, fit4$wresid)
 
 # weighted model has increased reisdual variance and does not correct tails
 # robust regression not a more reasonable estimator
-# model fit2 errors have mean 0, uncorrelated, with equal variances
-# fit2 gives best linear unbiased estimator
-# remove insignificant walkable.index variable
 fit.final <- lm(sqrt(housing.cost) ~
              housing.units.per.acre +
              household.co2 +
@@ -164,7 +159,7 @@ vif(fit.final)
 # final model diagnostics
 par(mfrow = c(2, 2))
 plot(fit.final)
-qqPlot(fit.final, envelope = .99)
+qqPlot(fit.final, envelope = .99) # eight outliers
 
 # export relevant dataset (fit.final variables) for Shiny app table
 all.data <- all.data[ , c(1, 7, 9, 19, 25, 36, 50, 52)]
