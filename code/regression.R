@@ -91,7 +91,7 @@ scatterplotMatrix(~ housing.cost +
 # transform housing cost variable to address fat tail residual distribution
 # acreage, med wage, and jobs variables flipped signs (multicollinearity?)
 # replace acreage with housing units per acre factor
-# remove population and med.wage variables because of high correlation coefficients
+# remove population and med.wage variables because of too high correlation coefficients
 # model interaction of jobs within 45 drive variable with jobs per household in block group 
 
 fit2 <- lm(sqrt(housing.cost) ~
@@ -103,7 +103,6 @@ fit2 <- lm(sqrt(housing.cost) ~
 
 summary(fit2)
 
-# diagnostic plots indicate homoscedastic residuals
 # qq plot still shows heavy right tail
 par(mfrow = c(2, 2))
 plot(fit2)
@@ -159,7 +158,7 @@ vif(fit.final)
 # final model diagnostics
 par(mfrow = c(2, 2))
 plot(fit.final)
-qqPlot(fit.final, envelope = .99) # eight outliers
+qqPlot(fit.final, envelope = .99) # five outliers
 
 # export relevant dataset (fit.final variables) for Shiny app table
 all.data <- all.data[ , c(1, 7, 9, 19, 25, 36, 50, 52)]
