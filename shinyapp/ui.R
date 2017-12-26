@@ -13,7 +13,7 @@ shinyUI(
             Costs vary greatly within the region, from a median monthly cost of $246 within
             the 12866 ZIP code to $3268 within the 12159 ZIP code."
              ),
-          h5("Where residents spend their housing dollars tells us alot about
+          h5("Where residents spend their housing dollars tells us a lot about
             about the economic (and environmental, as it turns out) dynamics
             in the Captial Region. Regression analysis provides us with useful
             insights about the intangible neighborhood characteristics that correlate
